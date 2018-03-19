@@ -1,0 +1,39 @@
+---
+- name: LE | Installation | Update system packages
+  package:
+    name: software-properties-common
+    state: latest
+
+- name: LE | Installation | Add certbot repository
+  apt_repository:
+    repo: "ppa:certbot/certbot"
+    state: present
+
+- name: LE | Installation | Install certbot
+  package:
+    name: python-certbot-nginx
+    state: latest
+
+- name: LE | Certificate Issue | Create new certificate for {{ le_hostname }} via webroot plugin
+  shell: certbot webroot -w {{ le_webroot }} -d {{ le_hostname }} --non-interactive --email {{ le_email }} --no-eff-email --keep-until-expiring --renew-with-new-domains --agree-tos
+  args:
+    creates: "/etc/letsencrypt/live/{{ le_hostname }}/fullchain.pem"
+  when: le_webroot is defined and le_webroot != ""
+
+- name: LE | Certificate issue | Stop nginx service
+  service:
+    name: nginx
+    state: stopped
+  when: le_webroot is not defined or le_webroot == ""
+
+- name: LE | Certificate Issue | Create new certificate for {{ le_hostname }}
+  shell: certbot certonly --standalone -d {{ le_hostname }} --non-interactive --email {{ le_email }} --no-eff-email --keep-until-expiring --renew-with-new-domains --agree-tos
+  args:
+    creates: "/etc/letsencrypt/live/{{ le_hostname }}/fullchain.pem"
+  when: le_webroot is not defined or le_webroot == ""
+
+- name: LE | Certificate issue | Start nginx service
+  service:
+    name: nginx
+    state: started
+  when: le_webroot is not defined or le_webroot == ""

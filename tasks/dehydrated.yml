@@ -1,0 +1,59 @@
+---
+- name: LE | Installation | Install prerequisites
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - python-boto
+    - git
+    - curl
+
+- name: LE | Installation | Checkout dehydrated repo
+  git:
+    repo: https://github.com/lukas2511/dehydrated.git
+    dest: /root/dehydrated
+
+- name: LE | Installation | Copy route53 plugin
+  copy:
+    src: route53.py
+    dest: /root/dehydrated/route53.py
+    mode: u=rwx,g=rwx,o=r
+  when: dns_holder == 'aws'
+
+- name: LE | Installation | Create directory for credentials
+  file:
+    path: ~/.aws/
+    state: directory
+  when: dns_holder == 'aws'
+
+- name: LE | Installation | Copy aws credentials
+  template:
+    src: aws_creds
+    dest: ~/.aws/credentials
+  when: dns_holder == 'aws'
+
+- name: LE | Installation | Copy dehydrated config file
+  template:
+    src: dh_config
+    dest: /root/dehydrated/config
+
+- name: LE | Installation | Create directory for certificates
+  file:
+    path: /etc/ssl_certs
+    state: directory
+
+- name: LE | Certificate Issue | Register new account key for {{ le_hostname }}
+  shell: ./dehydrated --register --accept-terms
+  args:
+    chdir: /root/dehydrated
+
+- name: LE | Certificate Issue | Create new certificate for {{ le_hostname }}
+  shell: ./dehydrated -c -d {{ le_hostname }}
+  args:
+    chdir: /root/dehydrated
+
+- name: LE | Grooming | Delete AWS credentials file
+  file:
+    path: ~/.aws/credentials
+    state: absent
+  when: dns_holder == 'aws'

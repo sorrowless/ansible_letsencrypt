@@ -1,0 +1,7 @@
+---
+- name: Issue needed Let's Encrypt certificate
+  hosts: letsencrypt
+  remote_user: root
+
+  roles:
+    - letsencrypt

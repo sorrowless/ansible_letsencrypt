@@ -1,0 +1,14 @@
+---
+- name: LE | Pre-check | Check if domain names set properly
+  fail:
+    msg: "Nor le_hostname or domain_names set"
+  when: le_hostname == "" and domain_names | length == 0
+
+- include: certbot.yml
+  when: le_acme_tool == 'certbot'
+
+- include: dehydrated.yml
+  when: le_acme_tool == 'dehydrated'
+
+- include: acme.sh.yml
+  when: le_acme_tool == 'acme.sh'

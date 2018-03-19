@@ -1,0 +1,80 @@
+---
+- name: LE | Pre-check | Check for challenge type
+  fail:
+    msg: "Webroot must be specified"
+  when: le_challenge == "webroot" and acme_sh_webroot_path == ""
+
+- name: LE | Pre-installation | Set hosts list fact
+  set_fact:
+    le_domain_names: ["{{ le_hostname }}"]
+  when: le_domain_names | length == 0
+
+- name: LE | Pre-installation | Convert domains list to appropriate format
+  set_fact:
+    # To understand this, look at https://medium.com/@george.shuklin/data-manipulation-in-ansible-bab8eb7d7f93
+    le_domains: '{{ le_domain_names | map("regex_replace", "^(.*)$", " -d \1") | list | join(" ") | safe }}'
+
+- name: LE | Pre-installation | Show resulting domains line
+  debug:
+    msg: "{{ le_domains }}"
+
+- name: LE | Pre-installation | Create webroot directory
+  file:
+    state: directory
+    path: "{{ acme_sh_webroot_path }}"
+  when: le_challenge == "webroot"
+
+- name: LE | Pre-installation | Create directory for certificates
+  file:
+    path: "/etc/ssl_certs/{{ le_domain_names[0] }}"
+    state: directory
+
+- name: LE | Installation | Install prerequisites
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - git
+    - curl
+
+- name: LE | Installation | Checkout acme.sh repo
+  git:
+    repo: https://github.com/Neilpang/acme.sh.git
+    dest: /root/acme.sh
+
+- name: LE | Installation | Install acme.sh to the system
+  shell: ./acme.sh --install
+  args:
+    chdir: /root/acme.sh
+
+- name: LE | Installation | Create webroot directory
+  file:
+    state: directory
+    path: "{{ acme_sh_webroot_path }}"
+  when: le_challenge == "webroot"
+
+- name: LE | Certificate Issue | Create new certificate for given domains
+  shell: ./acme.sh --issue {{ le_domains }} -w {{ acre_sh_webroot_path }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
+  args:
+    chdir: /root/acme.sh
+  when: le_challenge == "webroot"
+
+- name: LE | Certificate Issue | Create new certificate for given domains
+  shell: ./acme.sh --issue --{{ le_challenge }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
+  args:
+    chdir: /root/acme.sh
+  when: le_challenge == "standalone" or le_challenge == "nginx"
+
+- name: LE | Certificate Issue | Create new certificate for given domains
+  shell: ./acme.sh --issue --dns {{ acme_sh_dns_type }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
+  args:
+    chdir: /root/acme.sh
+  environment: "{{ acme_sh_dns_vars }}"
+  when: le_challenge == "dns"
+  register: dns_ex
+  failed_when: False
+
+- name: Fail if got real error on cert issuing time
+  fail:
+    msg: "Got an error while issue certificate"
+  when: dns_ex is defined and dns_ex.rc != 0 and not 'Domains not changed' in dns_ex.stdout
