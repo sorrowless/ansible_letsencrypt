@@ -10,7 +10,9 @@ le_hostname: ""
 # if le_hostname not used
 le_domain_names: []
 # challenge type: webroot, standalone, nginx, dns
-le_challenge: dns
+le_challenge: standalone
+# if we should stop any service when use standalone mode
+le_stop_service: false
 ## Acme.sh settings
 # webroot path
 acme_sh_webroot_path: /var/www/webroot

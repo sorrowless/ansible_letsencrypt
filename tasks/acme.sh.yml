@@ -53,28 +53,44 @@
     path: "{{ acme_sh_webroot_path }}"
   when: le_challenge == "webroot"
 
-- name: LE | Certificate Issue | Create new certificate for given domains
+- name: LE | Certificate Issue | Create new certificate for given domains with webroot
   shell: ./acme.sh --issue {{ le_domains }} -w {{ acre_sh_webroot_path }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
   args:
     chdir: /root/acme.sh
   when: le_challenge == "webroot"
 
-- name: LE | Certificate Issue | Create new certificate for given domains
+- name: LE | Certificate Issue | Create new certificate for given domains with nginx
   shell: ./acme.sh --issue --{{ le_challenge }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
   args:
     chdir: /root/acme.sh
-  when: le_challenge == "standalone" or le_challenge == "nginx"
+  when: le_challenge == "nginx"
 
-- name: LE | Certificate Issue | Create new certificate for given domains
+- name: LE | Certificate Issue | Create new certificate for given domains with stadalone
+  shell: ./acme.sh --issue --{{ le_challenge }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
+  args:
+    chdir: /root/acme.sh
+  when: le_challenge == "standalone" and le_stop_service == false
+  register: ch_ex
+  failed_when: False
+
+- name: LE | Certificate Issue | Create new certificate for given domains with standalone and pre-hooks
+  shell: ./acme.sh --issue --{{ le_challenge }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem --pre-hook "systemctl stop {{ le_stop_service }}" --post-hook "systemctl start {{ le_stop_service }}"
+  args:
+    chdir: /root/acme.sh
+  when: le_challenge == "standalone" and le_stop_service != false
+  register: ch_ex
+  failed_when: False
+
+- name: LE | Certificate Issue | Create new certificate for given domains with dns
   shell: ./acme.sh --issue --dns {{ acme_sh_dns_type }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
   args:
     chdir: /root/acme.sh
   environment: "{{ acme_sh_dns_vars }}"
   when: le_challenge == "dns"
-  register: dns_ex
+  register: ch_ex
   failed_when: False
 
 - name: Fail if got real error on cert issuing time
   fail:
     msg: "Got an error while issue certificate"
-  when: dns_ex is defined and dns_ex.rc != 0 and not 'Domains not changed' in dns_ex.stdout
+  when: ch_ex is defined and ch_ex.rc is defined and ch_ex.rc != 0 and not 'Domains not changed' in ch_ex.stdout
