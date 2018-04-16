@@ -91,6 +91,23 @@
   register: ch_ex
   failed_when: False
 
+- name: LE | Postcheck | Ensure certs placement
+  stat:
+    path: /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem
+  register: private_key
+
+- name: LE | Postcheck | Forcibly place keypair to target dir
+  file:
+    src: item["src"]
+    dest: item["dest"]
+    state: link
+  with_items:
+    - { src: /root/.acme.sh/{{ le_domain_names[0] }}/{{ le_domain_names[0] }}.cer,
+        dest: /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem }
+    - { src: /root/.acme.sh/{{ le_domain_names[0] }}/fullchain.cer,
+        dest: /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem }
+  when: not private_key.stat.exists
+
 - name: Fail if got real error on cert issuing time
   fail:
     msg: "Got an error while issue certificate"
