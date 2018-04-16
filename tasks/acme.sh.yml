@@ -36,6 +36,7 @@
   with_items:
     - git
     - curl
+    - socat
 
 - name: LE | Installation | Checkout acme.sh repo
   git:
