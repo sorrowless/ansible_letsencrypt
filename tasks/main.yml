@@ -2,7 +2,7 @@
 - name: LE | Pre-check | Check if domain names set properly
   fail:
     msg: "Nor le_hostname or domain_names set"
-  when: le_hostname == "" and domain_names | length == 0
+  when: le_hostname == "" and le_domain_names | length == 0
 
 - include: certbot.yml
   when: le_acme_tool == 'certbot'

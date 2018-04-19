@@ -15,7 +15,7 @@ Ansible 2.4
 le_acme_tool: acme.sh
 # LE email
 le_email: admin@localhost.com
-# hostname to issue cert for. Required to set if domain_names not used
+# hostname to issue cert for. Required to set if le_domain_names not used
 le_hostname: ""
 # domain names to issue cert for. Overrides le_hostname. Required to set
 # if le_hostname not used
