@@ -102,10 +102,10 @@
     dest: item["dest"]
     state: link
   with_items:
-    - { src: /root/.acme.sh/{{ le_domain_names[0] }}/{{ le_domain_names[0] }}.cer,
-        dest: /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem }
-    - { src: /root/.acme.sh/{{ le_domain_names[0] }}/fullchain.cer,
-        dest: /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem }
+    - { src: "/root/.acme.sh/{{ le_domain_names[0] }}/{{ le_domain_names[0] }}.cer",
+        dest: "/etc/ssl_certs/{{ le_domain_names[0] }}/private.pem" }
+    - { src: "/root/.acme.sh/{{ le_domain_names[0] }}/fullchain.cer",
+        dest: "/etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem" }
   when: not private_key.stat.exists
 
 - name: Fail if got real error on cert issuing time
