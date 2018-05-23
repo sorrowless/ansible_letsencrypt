@@ -54,36 +54,51 @@
     path: "{{ acme_sh_webroot_path }}"
   when: le_challenge == "webroot"
 
-- name: LE | Certificate Issue | Create new certificate for given domains with webroot
-  shell: ./acme.sh --issue {{ le_domains }} -w {{ acre_sh_webroot_path }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
+- name: LE | Certificate Issue | Stop according service
+  service:
+    name: "{{ le_stop_service }}"
+    state: stopped
+  when: le_stop_service != false
+  failed_when: false
+
+- name: LE | Certificate Issue | Create new certs in webroot mode
+  shell:
+    cmd: |
+      ./acme.sh --issue {{ le_domains }} -w {{ acme_sh_webroot_path }} \
+      --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem \
+      --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem \
   args:
     chdir: /root/acme.sh
   when: le_challenge == "webroot"
 
-- name: LE | Certificate Issue | Create new certificate for given domains with nginx
-  shell: ./acme.sh --issue --{{ le_challenge }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
+- name: LE | Certificate Issue | Create new certs in nginx mode
+  shell:
+    cmd: |
+      ./acme.sh --issue --{{ le_challenge }} {{ le_domains }} \
+      --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem \
+      --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem \
   args:
     chdir: /root/acme.sh
   when: le_challenge == "nginx"
 
-- name: LE | Certificate Issue | Create new certificate for given domains with stadalone
-  shell: ./acme.sh --issue --{{ le_challenge }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
+- name: LE | Certificate Issue | Create new certs in standalone mode
+  shell:
+    cmd: |
+      ./acme.sh --issue --{{ le_challenge }} {{ le_domains }} \
+      --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem \
+      --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem \
   args:
     chdir: /root/acme.sh
-  when: le_challenge == "standalone" and le_stop_service == false
+  when: le_challenge == "standalone"
   register: ch_ex
   failed_when: False
 
-- name: LE | Certificate Issue | Create new certificate for given domains with standalone and pre-hooks
-  shell: ./acme.sh --issue --{{ le_challenge }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem --pre-hook "systemctl stop {{ le_stop_service }}" --post-hook "systemctl start {{ le_stop_service }}"
-  args:
-    chdir: /root/acme.sh
-  when: le_challenge == "standalone" and le_stop_service != false
-  register: ch_ex
-  failed_when: False
-
-- name: LE | Certificate Issue | Create new certificate for given domains with dns
-  shell: ./acme.sh --issue --dns {{ acme_sh_dns_type }} {{ le_domains }} --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
+- name: LE | Certificate Issue | Create new certs in DNS mode
+  shell:
+    cmd: |
+      ./acme.sh --issue --dns {{ acme_sh_dns_type }} {{ le_domains }} \
+      --key-file /etc/ssl_certs/{{ le_domain_names[0] }}/private.pem \
+      --fullchain-file /etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem
   args:
     chdir: /root/acme.sh
   environment: "{{ acme_sh_dns_vars }}"
@@ -107,6 +122,13 @@
     - { src: "/root/.acme.sh/{{ le_domain_names[0] }}/fullchain.cer",
         dest: "/etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem" }
   when: not private_key.stat.exists
+
+- name: LE | Certificate Issue | Start according service
+  service:
+    name: "{{ le_stop_service }}"
+    state: started
+  when: le_stop_service != false
+  failed_when: false
 
 - name: Fail if got real error on cert issuing time
   fail:
