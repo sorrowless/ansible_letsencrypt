@@ -123,6 +123,16 @@
         dest: "/etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem" }
   when: not private_key.stat.exists
 
+- name: LE | Postcheck | Create HAProxy chain
+  shell:
+    cmd: |
+      cat \
+      /root/.acme.sh/{{ le_domain_names[0] }}/fullchain.cer \
+      /root/.acme.sh/{{ le_domain_names[0] }}/{{ le_domain_names[0] }}.cer \
+      > /etc/ssl_certs/{{ le_domain_names[0] }}/haproxy.pem
+  when: haproxy_bundle == true
+  changed_when: false
+
 - name: LE | Certificate Issue | Start according service
   service:
     name: "{{ le_stop_service }}"

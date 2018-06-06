@@ -22,6 +22,10 @@ le_hostname: ""
 le_domain_names: []
 # challenge type: webroot, standalone, nginx, dns
 le_challenge: dns
+# if we should stop any service when use standalone mode
+le_stop_service: false
+# create target cert bundle in HAProxy format
+haproxy_bundle: false
 ## Acme.sh settings
 # webroot path
 acme_sh_webroot_path: /var/www/webroot
