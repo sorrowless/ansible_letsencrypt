@@ -117,7 +117,7 @@
     dest: item["dest"]
     state: link
   with_items:
-    - { src: "/root/.acme.sh/{{ le_domain_names[0] }}/{{ le_domain_names[0] }}.cer",
+    - { src: "/root/.acme.sh/{{ le_domain_names[0] }}/{{ le_domain_names[0] }}.key",
         dest: "/etc/ssl_certs/{{ le_domain_names[0] }}/private.pem" }
     - { src: "/root/.acme.sh/{{ le_domain_names[0] }}/fullchain.cer",
         dest: "/etc/ssl_certs/{{ le_domain_names[0] }}/fullchain.pem" }
@@ -128,7 +128,7 @@
     cmd: |
       cat \
       /root/.acme.sh/{{ le_domain_names[0] }}/fullchain.cer \
-      /root/.acme.sh/{{ le_domain_names[0] }}/{{ le_domain_names[0] }}.cer \
+      /root/.acme.sh/{{ le_domain_names[0] }}/{{ le_domain_names[0] }}.key \
       > /etc/ssl_certs/{{ le_domain_names[0] }}/haproxy.pem
   when: haproxy_bundle == true
   changed_when: false
