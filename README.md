@@ -1,7 +1,9 @@
-sbog/letsencrypt
-================
+DEPRECATED - sbog/letsencrypt
+=============================
 
-Role to help issue LetsEncrypt certificate
+Role to help issue LetsEncrypt certificate.
+
+Beware that this role is deprecated in favor of https://github.com/sorrowless/ansible_tls
 
 #### Requirements
 
